@@ -9,3 +9,23 @@ id,title,artist,genre,mood,energy,tempo_bpm,valence,danceability,acousticness
 8,Night Drive Loop,Neon Echo,synthwave,moody,0.75,110,0.49,0.73,0.22
 9,Focus Flow,LoRoom,lofi,focused,0.40,80,0.59,0.60,0.78
 10,Rooftop Lights,Indigo Parade,indie pop,happy,0.76,124,0.81,0.82,0.35
+11,Shake It Off,Taylor Swift,pop,happy,0.80,160,0.94,0.65,0.12
+12,Anti-Hero,Taylor Swift,pop,moody,0.64,97,0.53,0.64,0.05
+13,cardigan,Taylor Swift,indie pop,chill,0.50,110,0.43,0.55,0.60
+14,Love Yourself,Justin Bieber,pop,relaxed,0.62,100,0.72,0.73,0.56
+15,Peaches,Justin Bieber,pop,happy,0.70,90,0.73,0.67,0.11
+16,Blinding Lights,The Weeknd,synthwave,moody,0.80,171,0.33,0.51,0.00
+17,Starboy,The Weeknd,synthwave,moody,0.59,186,0.54,0.68,0.00
+18,Save Your Tears,The Weeknd,pop,moody,0.83,118,0.66,0.61,0.00
+19,Levitating,Dua Lipa,pop,happy,0.82,103,0.92,0.70,0.00
+20,bad guy,Billie Eilish,pop,moody,0.43,135,0.56,0.70,0.33
+21,Shape of You,Ed Sheeran,pop,happy,0.65,96,0.93,0.83,0.08
+22,Perfect,Ed Sheeran,indie pop,happy,0.45,95,0.75,0.50,0.58
+23,Believer,Imagine Dragons,rock,intense,0.73,125,0.25,0.43,0.02
+24,In the End,Linkin Park,rock,moody,0.75,105,0.32,0.44,0.05
+25,Thunderstruck,AC/DC,rock,intense,0.95,134,0.56,0.57,0.01
+26,Come Away with Me,Norah Jones,jazz,relaxed,0.19,83,0.40,0.44,0.93
+27,All of Me,John Legend,jazz,happy,0.26,63,0.49,0.42,0.79
+28,Yellow,Coldplay,indie pop,happy,0.46,87,0.61,0.46,0.46
+29,feather,Nujabes,lofi,chill,0.38,87,0.65,0.63,0.52
+30,Experience,Ludovico Einaudi,ambient,relaxed,0.12,50,0.23,0.19,0.98

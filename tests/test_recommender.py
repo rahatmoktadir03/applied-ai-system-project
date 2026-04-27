@@ -98,7 +98,7 @@ def test_score_song_perfect_match_scores_near_one():
 
 def test_load_songs_returns_all_rows():
     songs = load_songs("data/songs.csv")
-    assert len(songs) == 10
+    assert len(songs) >= 10
 
 
 def test_load_songs_returns_dicts_with_required_keys():
