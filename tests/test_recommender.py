@@ -1,4 +1,5 @@
 from src.recommender import Song, UserProfile, Recommender
+from src.evaluation import EvaluationSuite
 
 def make_small_recommender() -> Recommender:
     songs = [
@@ -59,3 +60,14 @@ def test_explain_recommendation_returns_non_empty_string():
     explanation = rec.explain_recommendation(user, song)
     assert isinstance(explanation, str)
     assert explanation.strip() != ""
+
+
+def test_evaluation_suite_runs():
+    suite = EvaluationSuite("data/songs.csv")
+    report = suite.run_all()
+
+    assert "summary" in report
+    assert report["summary"]["avg_relevance"] > 0
+    assert 0.0 <= report["summary"]["avg_diversity"] <= 1.0
+    assert 0.0 <= report["summary"]["avg_consistency"] <= 1.0
+    assert len(report["results"]) == 5
