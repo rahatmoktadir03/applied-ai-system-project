@@ -303,6 +303,36 @@ The hardest part of evaluation was defining metrics that mean what you think the
 
 ---
 
+## Ethics and Responsible AI
+
+### Limitations and Biases
+
+VibeFinder has real limitations that matter for responsible use:
+
+- **Western cultural bias.** Every genre in the catalog represents Western commercial music. A user looking for Afrobeats, K-pop, Bollywood, or any non-Western style would receive zero relevant results — not because the algorithm failed, but because it was never designed with their taste in mind.
+- **Genre categories encode assumptions.** "Jazz" is a single binary tag covering a century of diverse music. The system treats it as an objective fact, but it's a cultural judgment about how music should be grouped.
+- **Fixed weights were chosen by hand.** The 35/25/20/10/10 weight split reflects what the developer assumed matters. A listener whose taste is driven primarily by tempo or danceability — both unweighted — would consistently get poor results with no way to signal that.
+- **No memory or context.** The system recommends the same songs at 7am as at midnight, on a Monday as on a Friday. Real listening preferences shift with context and activity.
+
+### Could VibeFinder Be Misused?
+
+At its current scale (10 songs, classroom use), direct misuse is unlikely. But the same patterns exist at production scale:
+
+| Risk | How It Works | Prevention in VibeFinder |
+|------|-------------|--------------------------|
+| **Filter bubbles** | Pure relevance optimization returns the same genre repeatedly, narrowing musical taste over time | Diversity threshold enforced by the agent's refine step |
+| **Demographic profiling** | Music taste correlates with age, culture, and background — interaction data could be used to infer demographics without consent | No user data is collected or stored; sessions are fully stateless |
+| **Commercial manipulation** | Weights could be secretly tuned to push commercially advantageous songs while the interface appears neutral | Weights are visible in open source code; no hidden optimization layer |
+| **Feedback loop bias** | If the system learned from click data dominated by one demographic, it would gradually optimize for that group at others' expense | No learning or retraining in VibeFinder; behavior is fixed and auditable |
+
+### What Surprised Me in Testing
+
+Consistency being exactly 1.0 across all five profiles initially felt suspicious — like something was wrong. After checking, it turned out to be a simple consequence of full determinism: no randomness anywhere in the pipeline means the same input always produces the same output, every time. That realization raised a harder question: *consistency of what?* A system can consistently give bad answers.
+
+That led me to look more carefully at the Jazz Afternoon Relaxer profile, which never converges — the agent runs all 3 iterations and exits by exhaustion because the catalog only has one jazz song. The system accurately flagged its own limitation through the convergence status. That surprised me most: the evaluation metrics weren't just measuring performance, they were surfacing a data quality problem the algorithm couldn't fix on its own.
+
+---
+
 ## Reflection
 
 Building VibeFinder taught me that recommender systems are fundamentally a *representation problem* more than a math problem. The hardest decisions weren't about which algorithm to use — they were about what to encode: what does "energy" mean as a number? What does it mean for two songs to be "similar"? The moment you reduce music to five floats, you've already made irreversible choices about what matters.
@@ -310,6 +340,16 @@ Building VibeFinder taught me that recommender systems are fundamentally a *repr
 The agentic loop was the most surprising part to build. I expected it to feel artificial — a loop added just to check a box on the requirements list. Instead, it genuinely improved results: without the diversity enforcement step, the system confidently returned four nearly identical songs. The loop is doing real work. That changed how I think about agentic AI: the value isn't in the agent being "smart," it's in the agent having a feedback signal it can actually act on.
 
 The biggest open question this project left me with: how do you evaluate a recommender when there's no ground truth? I used diversity and relevance as proxies — but a user might *want* five songs from the same genre. The "right" answer depends on who's asking, and no metric fully captures that. That gap between measurable and meaningful is something every real AI system has to grapple with, and building this gave me a concrete example I can reason about.
+
+### Collaborating with AI on This Project
+
+This project was built with AI assistance throughout — planning, implementation, and documentation. Two moments stand out as worth reflecting on honestly:
+
+**A genuinely helpful suggestion:** The AI proposed adding `confidence_score` as a *separate metric* from the weighted relevance score. Relevance measures how strongly all factors combined; confidence measures how many of the 4 key factors clearly fired. These capture different things — a song can score 0.70 relevance by matching energy and acousticness very closely while missing genre and mood entirely. Having both metrics made the evaluation harness more informative: the per-profile confidence scores (Lofi Studier: 0.80, Jazz: 0.60) correlated cleanly with relevance and helped explain *why* certain profiles performed differently.
+
+**A flawed suggestion:** The initial output format used a plain 3-tuple `(song, score, explanation)` throughout the entire pipeline. When confidence scoring was added, this required updating five separate files because every caller that unpacked the tuple broke. A better initial design would have used a `NamedTuple` or `dataclass` for the recommendation result — adding a field would then require changing only the definition, not every callsite. The flat tuple was a premature simplification. In future projects I would push back on plain tuples for any interface that's likely to evolve.
+
+See [model_card.md](model_card.md) for the full responsible AI evaluation including detailed bias analysis, misuse scenarios, and evaluation results.
 
 ---
 
