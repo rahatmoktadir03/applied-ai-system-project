@@ -83,6 +83,33 @@ def load_songs(csv_path: str) -> List[Dict]:
     return valid
 
 
+def confidence_score(user_prefs: Dict, song: Dict) -> float:
+    """
+    Returns a 0.0–1.0 confidence rating based on how many of 4 key
+    factors strongly matched: genre, mood, energy proximity, acoustic fit.
+    Separate from the weighted score — measures breadth of match, not depth.
+    """
+    matched = 0
+
+    if song.get("genre") == user_prefs.get("genre"):
+        matched += 1
+
+    if song.get("mood") == user_prefs.get("mood"):
+        matched += 1
+
+    energy_diff = abs(float(song.get("energy", 0.5)) - float(user_prefs.get("energy", 0.5)))
+    if energy_diff <= 0.20:
+        matched += 1
+
+    acousticness = float(song.get("acousticness", 0.5))
+    if user_prefs.get("likes_acoustic", False) and acousticness >= 0.5:
+        matched += 1
+    elif not user_prefs.get("likes_acoustic", False) and acousticness < 0.5:
+        matched += 1
+
+    return round(matched / 4, 2)
+
+
 def score_song(user_prefs: Dict, song: Dict) -> Tuple[float, List[str]]:
     """
     Scores a single song against user preferences.
@@ -119,10 +146,10 @@ def score_song(user_prefs: Dict, song: Dict) -> Tuple[float, List[str]]:
     return (round(score, 4), reasons)
 
 
-def recommend_songs(user_prefs: Dict, songs: List[Dict], k: int = 5) -> List[Tuple[Dict, float, str]]:
+def recommend_songs(user_prefs: Dict, songs: List[Dict], k: int = 5) -> List[Tuple]:
     """
     Scores and ranks all songs against user preferences.
-    Returns top-k as list of (song_dict, score, explanation).
+    Returns top-k as list of (song_dict, score, explanation, confidence).
     """
     user_prefs = validate_user_prefs(user_prefs)
     logger.info("Generating recommendations for genre=%s mood=%s energy=%.2f",
@@ -130,8 +157,9 @@ def recommend_songs(user_prefs: Dict, songs: List[Dict], k: int = 5) -> List[Tup
     scored = []
     for song in songs:
         score, reasons = score_song(user_prefs, song)
+        conf = confidence_score(user_prefs, song)
         explanation = ", ".join(reasons)
-        scored.append((song, score, explanation))
+        scored.append((song, score, explanation, conf))
 
     scored.sort(key=lambda x: x[1], reverse=True)
     return scored[:k]

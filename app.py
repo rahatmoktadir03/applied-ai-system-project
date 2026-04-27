@@ -40,9 +40,9 @@ if run_btn:
 
     st.subheader(f"Top {len(results)} Recommendations")
 
-    for rank, (song, score, explanation) in enumerate(results, start=1):
+    for rank, (song, score, explanation, confidence) in enumerate(results, start=1):
         with st.container(border=True):
-            col1, col2 = st.columns([3, 1])
+            col1, col2, col3 = st.columns([3, 1, 1])
             with col1:
                 st.markdown(f"**{rank}. {song['title']}**")
                 st.caption(
@@ -50,6 +50,8 @@ if run_btn:
                 )
             with col2:
                 st.metric("Score", f"{score:.2f}")
+            with col3:
+                st.metric("Confidence", f"{confidence:.0%}")
             st.progress(min(float(score), 1.0))
             with st.expander("Why this song?"):
                 st.write(explanation)

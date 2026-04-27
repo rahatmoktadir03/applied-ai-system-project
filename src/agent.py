@@ -2,6 +2,7 @@ from dataclasses import dataclass, field
 from typing import List, Dict, Tuple
 from src.logger import get_logger, validate_user_prefs
 from src.retrieval import retrieve_similar_songs, generate_explanation
+from src.recommender import confidence_score
 
 logger = get_logger("agent")
 
@@ -158,10 +159,10 @@ class Agent:
         self.state.weights = _normalize(weights)
         logger.debug("Adjust weights: %s", {k: f"{v:.3f}" for k, v in self.state.weights.items()})
 
-    def recommend(self, user_prefs: Dict, k: int = 5) -> List[Tuple[Dict, float, str]]:
+    def recommend(self, user_prefs: Dict, k: int = 5) -> List[Tuple]:
         """
         Full agentic loop: plan → [act → evaluate → refine → adjust] × MAX_ITERATIONS.
-        Returns top-k as (song_dict, score, rag_explanation).
+        Returns top-k as (song_dict, score, rag_explanation, confidence).
         """
         user_prefs = validate_user_prefs(user_prefs)
         self.state = AgentState()
@@ -202,7 +203,8 @@ class Agent:
         for song, score in final:
             sim, matched = id_to_retrieval.get(song.get("id"), (score, []))
             explanation = generate_explanation(user_prefs, song, matched, sim)
-            output.append((song, score, explanation))
+            conf = confidence_score(user_prefs, song)
+            output.append((song, score, explanation, conf))
 
         logger.info(
             "Agent done: %d results, converged=%s, iterations=%d",
