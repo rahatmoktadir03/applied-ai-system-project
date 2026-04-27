@@ -1,14 +1,28 @@
-# 🎵 VibeFinder — Music Recommender System
+# 🎵 VibeFinder — AI Music Recommender System
 
-## Project Summary
+> A local AI-powered music recommender that demonstrates RAG, agentic workflows, and reliability testing — built entirely in Python with no external API required.
 
-VibeFinder is a local AI-powered music recommender built in Python. It takes a user's taste profile — preferred genre, mood, energy level, and acoustic preference — and returns ranked song recommendations with transparent, feature-grounded explanations.
+---
 
-The system demonstrates three applied AI patterns without any external API:
+## Project Origin
 
-- **RAG (Retrieval-Augmented Generation):** Songs are retrieved by cosine similarity over a 5-dimensional audio feature vector. Explanations are generated from the retrieved feature matches, grounding every recommendation in evidence.
-- **Agentic Workflow:** A self-correcting agent loop (plan → act → evaluate → refine) adjusts feature weights across up to 3 iterations, enforcing diversity and relevance thresholds before finalizing results.
-- **Reliability Testing:** An evaluation harness runs 5 predefined user profiles and measures three metrics — relevance, diversity, and consistency — saving a timestamped JSON report to `logs/`.
+VibeFinder is an extension of the **Music Recommender Simulation** originally built in Modules 1–3. The original project introduced the core data structures — `Song`, `UserProfile`, and a weighted `score_song` function — as a classroom exercise in representing preferences as data and turning them into ranked outputs. It could load a small CSV catalog and return a sorted list of songs, but had no explainability, no self-correction, and no way to measure whether its results were actually good.
+
+This final project evolves that prototype into a full applied AI system by adding a retrieval layer for grounded explanations, an agentic loop that checks and improves its own output, and a structured evaluation harness that measures performance across multiple user types.
+
+---
+
+## What VibeFinder Does and Why It Matters
+
+Music recommendation is one of the most personal and high-stakes applications of AI — a bad recommendation breaks immersion; a good one introduces you to something you didn't know you needed. Most real-world recommenders are black boxes: they give you a result but can't tell you why.
+
+VibeFinder is different by design. Every recommendation is:
+- **Ranked** by a transparent weighted score you can inspect
+- **Explained** by citing the exact audio features that matched your profile
+- **Verified** by an agent that checks diversity and relevance before returning results
+- **Tested** against 5 user profiles with 3 measurable metrics
+
+It's a small system — 10 songs, one catalog — but it demonstrates the same architectural patterns (RAG, agentic loops, evaluation harnesses) that power production recommender systems at scale.
 
 ---
 
@@ -17,138 +31,90 @@ The system demonstrates three applied AI patterns without any external API:
 Full component map, data flow, and testing touchpoints:
 **[View Architecture Diagrams →](assets/architecture.md)**
 
----
-
-## How The System Works
-
-### Pipeline Overview
+### How the Pieces Connect
 
 ```
 data/songs.csv
-    └─ load_songs()         Loads and validates song data
-         └─ Agent.plan()        Sets feature weights from user profile
-              └─ Agent.act()        Scores and ranks all songs
-                   └─ Agent.evaluate()   Computes diversity + relevance
-                        └─ Agent.refine()     Boosts genre variety if needed
-                             └─ rag_recommend()   Attaches RAG explanations
+    └─ src/logger.py          Validates input, skips bad rows, logs all activity
+         └─ src/recommender.py    Loads songs, scores each against user profile
+              └─ src/retrieval.py      Cosine similarity search, feature-cited explanations
+                   └─ src/agent.py         Plan → Act → Evaluate → Refine loop
+                        ├─ app.py               Streamlit UI (human review)
+                        └─ src/evaluation.py    5-profile reliability harness → JSON report
 ```
 
-### Scoring Factors
+### The Three AI Patterns
 
-Each song is scored against the user profile using weighted factors:
-
-| Factor | Weight | Description |
-|--------|--------|-------------|
-| Genre match | 0.35 | Exact match on genre field |
-| Mood match | 0.25 | Exact match on mood field |
-| Energy proximity | 0.20 | `1 - abs(song_energy - user_energy)` |
-| Acoustic preference | 0.10 | Acousticness (or inverse) based on toggle |
-| Valence tiebreaker | 0.10 | Song's positivity score |
-
-Weights are re-normalized dynamically by the agent when diversity or relevance fall below thresholds.
-
-### RAG Explanations
-
-Retrieval uses cosine similarity on a 5-dim feature vector `[energy, valence, danceability, acousticness, tempo_normalized]`. Features within 0.15 of the user's target are tagged as "close matches." Explanations cite only these matched features with real values, making every output traceable.
-
-### Agentic Loop
-
-- **Diversity threshold:** 0.5 — at least half the top-k songs must be different genres
-- **Relevance threshold:** 0.6 — mean score across top-k
-- **Max iterations:** 3 — convergence status is shown in the Streamlit diagnostics panel
+| Pattern | Where It Lives | What It Does |
+|---------|---------------|--------------|
+| **RAG** | `src/retrieval.py` | Retrieves songs by cosine similarity on 5 audio features; generates explanations that cite only the features that actually matched |
+| **Agentic Workflow** | `src/agent.py` | Runs up to 3 plan→act→evaluate→refine iterations; adjusts weights and re-ranks if diversity < 0.5 or relevance < 0.6 |
+| **Reliability Testing** | `src/evaluation.py` + `tests/` | EvaluationSuite runs 5 user profiles, measures relevance/diversity/consistency, saves timestamped JSON report |
 
 ---
 
-## Architecture
+## Setup Instructions
 
-```
-src/
-├── __init__.py
-├── recommender.py   Core scoring: load_songs, score_song, recommend_songs, Recommender class
-├── logger.py        Dual-handler logger, validate_user_prefs, validate_song_row
-├── retrieval.py     Cosine similarity retrieval + template-based explanation generation
-├── agent.py         Agentic plan→act→evaluate→refine loop with AgentState tracking
-└── evaluation.py    EvaluationSuite: 5 profiles × 3 metrics → JSON report
+### Requirements
 
-app.py               Streamlit UI (run from project root)
-data/songs.csv       10-song catalog with audio features
-logs/                Auto-created: recommender.log + evaluation JSON reports
-tests/
-└── test_recommender.py  3 unit/smoke tests
+- Python 3.9+
+- `pandas`, `pytest`, `streamlit` (all in `requirements.txt`)
+
+### Step-by-Step
+
+**1. Clone the repository**
+
+```bash
+git clone <your-repo-url>
+cd applied-ai-system-project
 ```
 
----
+**2. Create and activate a virtual environment** *(recommended)*
 
-## Getting Started
+```bash
+python -m venv .venv
 
-### Setup
+# Mac / Linux
+source .venv/bin/activate
 
-1. Create a virtual environment (optional but recommended):
+# Windows
+.venv\Scripts\activate
+```
 
-   ```bash
-   python -m venv .venv
-   source .venv/bin/activate      # Mac / Linux
-   .venv\Scripts\activate         # Windows
-   ```
+**3. Install dependencies**
 
-2. Install dependencies:
+```bash
+pip install -r requirements.txt
+```
 
-   ```bash
-   pip install -r requirements.txt
-   ```
+**4. Run the CLI recommender**
 
-3. Run the CLI:
+```bash
+python -m src.main
+```
 
-   ```bash
-   python -m src.main
-   ```
+Expected output: top 5 recommendations for a default pop/happy/0.8-energy profile, each with a score and feature-cited explanation.
 
-4. Run the Streamlit UI:
+**5. Launch the interactive UI**
 
-   ```bash
-   streamlit run app.py
-   ```
+```bash
+streamlit run app.py
+```
 
-5. Run the evaluation suite and save a JSON report:
+Opens in your browser. Use the sidebar to set genre, mood, energy, and acoustic preference. Click **Find My Songs**.
 
-   ```bash
-   python -c "from src.evaluation import EvaluationSuite; EvaluationSuite().run_and_save()"
-   ```
+**6. Run the evaluation suite**
 
-### Running Tests
+```bash
+python -c "from src.evaluation import EvaluationSuite; EvaluationSuite().run_and_save()"
+```
+
+Saves a timestamped JSON report to `logs/eval_report_YYYYMMDD_HHMMSS.json`.
+
+**7. Run all tests**
 
 ```bash
 pytest tests/ -v
 ```
 
----
-
-## Experiments
-
-### Changing diversity threshold
-
-Lowering `DIVERSITY_THRESHOLD` from 0.5 to 0.2 caused the agent to converge in 1 iteration but often returned 3–4 songs from the same genre. Raising it to 0.8 on a 10-song catalog caused the agent to exhaust all 3 iterations for narrow profiles (e.g. jazz, which has only 1 song in the catalog).
-
-### Genre with only one song
-
-Profiles targeting `jazz` or `ambient` always hit a diversity ceiling: after the single matching song is placed, the refine step fills remaining slots from other genres — which is correct behavior, but the top score gap between slot 1 and slot 2 is large.
-
-### Acoustic vs non-acoustic
-
-Switching `likes_acoustic` flips the acousticness component's polarity. Lofi and ambient songs rise sharply for acoustic users; rock and synthwave drop. The change is immediate because the weight modulation happens in `plan()` before any iteration runs.
-
----
-
-## Limitations and Risks
-
-- **Tiny catalog:** 10 songs makes true diversity hard to achieve for any profile — in production this would need thousands of entries.
-- **Exact-match genre and mood:** A typo (`"Pop"` vs `"pop"`) scores zero on those factors. No fuzzy matching.
-- **Hand-tuned weights:** The 0.35/0.25/0.20/0.10/0.10 split was chosen manually, not learned from data.
-- **No collaborative filtering:** There is no user history or "people like you also liked" signal.
-- **Western pop-centric catalog:** The 10 songs skew toward Western genres; a global user would find fewer relevant results.
-
----
-
-## Reflection
-
-See [model_card.md](model_card.md) for a full responsible-AI evaluation of VibeFinder.
+All 3 tests should pass.
