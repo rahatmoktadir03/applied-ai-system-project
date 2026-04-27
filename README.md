@@ -118,3 +118,108 @@ pytest tests/ -v
 ```
 
 All 3 tests should pass.
+
+---
+
+## Sample Interactions
+
+The following are real outputs captured from the live system — unedited.
+
+### Example 1 — High-Energy Pop Fan
+
+**Input:**
+```python
+{"genre": "pop", "mood": "happy", "energy": 0.8, "likes_acoustic": False}
+```
+
+**Agent status:** Converged at iteration 1 · Diversity: 0.67 · Relevance: 0.76
+
+**Output (top 3):**
+```
+1. Sunrise City by Neon Echo [pop] — Score: 0.97
+   energy (0.82) matches your target (0.80);
+   tempo (118.0 BPM) matches your pace.
+   Feature similarity score: 0.96
+
+2. Gym Hero by Max Pulse [pop] — Score: 0.70
+   energy (0.93) matches your target (0.80);
+   acoustic character (0.05) fits your non-acoustic preference;
+   tempo (132.0 BPM) matches your pace.
+   Feature similarity score: 0.98
+
+3. Rooftop Lights by Indigo Parade [indie pop] — Score: 0.60
+   energy (0.76) matches your target (0.80);
+   tempo (124.0 BPM) matches your pace.
+   Feature similarity score: 0.94
+```
+
+The top result (Sunrise City, 0.97) scored high because it hit both genre *and* mood match bonuses on top of close energy and tempo alignment — four factors firing together.
+
+---
+
+### Example 2 — Chill Lofi Studier
+
+**Input:**
+```python
+{"genre": "lofi", "mood": "chill", "energy": 0.35, "likes_acoustic": True}
+```
+
+**Agent status:** Converged at iteration 1 · Diversity: 1.00 · Relevance: 0.63
+
+**Output (top 3):**
+```
+1. Library Rain by Paper Lanterns [lofi] — Score: 0.94
+   energy (0.35) matches your target (0.35);
+   valence (0.60) aligns with your preference;
+   danceability (0.58) suits your vibe;
+   acoustic character (0.86) fits your acoustic preference.
+   Feature similarity score: 0.96
+
+2. Spacewalk Thoughts by Orbit Bloom [ambient] — Score: 0.59
+   energy (0.28) matches your target (0.35);
+   danceability (0.41) suits your vibe;
+   acoustic character (0.92) fits your acoustic preference.
+   Feature similarity score: 0.95
+
+3. Coffee Shop Stories by Slow Stereo [jazz] — Score: 0.35
+   energy (0.37) matches your target (0.35);
+   danceability (0.54) suits your vibe;
+   acoustic character (0.89) fits your acoustic preference.
+   Feature similarity score: 0.97
+```
+
+Diversity reached 1.00 — all 3 results are different genres (lofi, ambient, jazz). Acoustic users naturally get diverse results because acousticness is spread across multiple genres in the catalog.
+
+---
+
+### Example 3 — Rock Gym Warrior
+
+**Input:**
+```python
+{"genre": "rock", "mood": "intense", "energy": 0.92, "likes_acoustic": False}
+```
+
+**Agent status:** Converged at iteration 1 · Diversity: 0.67 · Relevance: 0.65
+
+**Output (top 3):**
+```
+1. Storm Runner by Voltline [rock] — Score: 0.96
+   energy (0.91) matches your target (0.92);
+   valence (0.48) aligns with your preference;
+   acoustic character (0.10) fits your non-acoustic preference;
+   tempo (152.0 BPM) matches your pace.
+   Feature similarity score: 0.99
+
+2. Gym Hero by Max Pulse [pop] — Score: 0.63
+   energy (0.93) matches your target (0.92);
+   acoustic character (0.05) fits your non-acoustic preference;
+   tempo (132.0 BPM) matches your pace.
+   Feature similarity score: 0.97
+
+3. Sunrise City by Neon Echo [pop] — Score: 0.35
+   energy (0.82) matches your target (0.92);
+   tempo (118.0 BPM) matches your pace.
+   Feature similarity score: 0.95
+```
+
+With only one rock song in the catalog, slots 2 and 3 fall back to high-energy pop — the next closest match by audio feature vector. The RAG explanation is honest: it cites energy and tempo proximity rather than pretending these are rock songs.
