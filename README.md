@@ -12,6 +12,13 @@ The system demonstrates three applied AI patterns without any external API:
 
 ---
 
+## System Architecture
+
+Full component map, data flow, and testing touchpoints:
+**[View Architecture Diagrams →](assets/architecture.md)**
+
+---
+
 ## How The System Works
 
 ### Pipeline Overview
