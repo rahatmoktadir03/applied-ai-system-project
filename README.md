@@ -1,33 +1,74 @@
-# 🎵 Music Recommender Simulation
+# 🎵 VibeFinder — Music Recommender System
 
 ## Project Summary
 
-In this project you will build and explain a small music recommender system.
+VibeFinder is a local AI-powered music recommender built in Python. It takes a user's taste profile — preferred genre, mood, energy level, and acoustic preference — and returns ranked song recommendations with transparent, feature-grounded explanations.
 
-Your goal is to:
+The system demonstrates three applied AI patterns without any external API:
 
-- Represent songs and a user "taste profile" as data
-- Design a scoring rule that turns that data into recommendations
-- Evaluate what your system gets right and wrong
-- Reflect on how this mirrors real world AI recommenders
-
-Replace this paragraph with your own summary of what your version does.
+- **RAG (Retrieval-Augmented Generation):** Songs are retrieved by cosine similarity over a 5-dimensional audio feature vector. Explanations are generated from the retrieved feature matches, grounding every recommendation in evidence.
+- **Agentic Workflow:** A self-correcting agent loop (plan → act → evaluate → refine) adjusts feature weights across up to 3 iterations, enforcing diversity and relevance thresholds before finalizing results.
+- **Reliability Testing:** An evaluation harness runs 5 predefined user profiles and measures three metrics — relevance, diversity, and consistency — saving a timestamped JSON report to `logs/`.
 
 ---
 
 ## How The System Works
 
-Explain your design in plain language.
+### Pipeline Overview
 
-Some prompts to answer:
+```
+data/songs.csv
+    └─ load_songs()         Loads and validates song data
+         └─ Agent.plan()        Sets feature weights from user profile
+              └─ Agent.act()        Scores and ranks all songs
+                   └─ Agent.evaluate()   Computes diversity + relevance
+                        └─ Agent.refine()     Boosts genre variety if needed
+                             └─ rag_recommend()   Attaches RAG explanations
+```
 
-- What features does each `Song` use in your system
-  - For example: genre, mood, energy, tempo
-- What information does your `UserProfile` store
-- How does your `Recommender` compute a score for each song
-- How do you choose which songs to recommend
+### Scoring Factors
 
-You can include a simple diagram or bullet list if helpful.
+Each song is scored against the user profile using weighted factors:
+
+| Factor | Weight | Description |
+|--------|--------|-------------|
+| Genre match | 0.35 | Exact match on genre field |
+| Mood match | 0.25 | Exact match on mood field |
+| Energy proximity | 0.20 | `1 - abs(song_energy - user_energy)` |
+| Acoustic preference | 0.10 | Acousticness (or inverse) based on toggle |
+| Valence tiebreaker | 0.10 | Song's positivity score |
+
+Weights are re-normalized dynamically by the agent when diversity or relevance fall below thresholds.
+
+### RAG Explanations
+
+Retrieval uses cosine similarity on a 5-dim feature vector `[energy, valence, danceability, acousticness, tempo_normalized]`. Features within 0.15 of the user's target are tagged as "close matches." Explanations cite only these matched features with real values, making every output traceable.
+
+### Agentic Loop
+
+- **Diversity threshold:** 0.5 — at least half the top-k songs must be different genres
+- **Relevance threshold:** 0.6 — mean score across top-k
+- **Max iterations:** 3 — convergence status is shown in the Streamlit diagnostics panel
+
+---
+
+## Architecture
+
+```
+src/
+├── __init__.py
+├── recommender.py   Core scoring: load_songs, score_song, recommend_songs, Recommender class
+├── logger.py        Dual-handler logger, validate_user_prefs, validate_song_row
+├── retrieval.py     Cosine similarity retrieval + template-based explanation generation
+├── agent.py         Agentic plan→act→evaluate→refine loop with AgentState tracking
+└── evaluation.py    EvaluationSuite: 5 profiles × 3 metrics → JSON report
+
+app.py               Streamlit UI (run from project root)
+data/songs.csv       10-song catalog with audio features
+logs/                Auto-created: recommender.log + evaluation JSON reports
+tests/
+└── test_recommender.py  3 unit/smoke tests
+```
 
 ---
 
@@ -39,173 +80,68 @@ You can include a simple diagram or bullet list if helpful.
 
    ```bash
    python -m venv .venv
-   source .venv/bin/activate      # Mac or Linux
+   source .venv/bin/activate      # Mac / Linux
    .venv\Scripts\activate         # Windows
+   ```
 
-2. Install dependencies
+2. Install dependencies:
 
-```bash
-pip install -r requirements.txt
-```
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-3. Run the app:
+3. Run the CLI:
 
-```bash
-python -m src.main
-```
+   ```bash
+   python -m src.main
+   ```
+
+4. Run the Streamlit UI:
+
+   ```bash
+   streamlit run app.py
+   ```
+
+5. Run the evaluation suite and save a JSON report:
+
+   ```bash
+   python -c "from src.evaluation import EvaluationSuite; EvaluationSuite().run_and_save()"
+   ```
 
 ### Running Tests
 
-Run the starter tests with:
-
 ```bash
-pytest
+pytest tests/ -v
 ```
-
-You can add more tests in `tests/test_recommender.py`.
 
 ---
 
-## Experiments You Tried
+## Experiments
 
-Use this section to document the experiments you ran. For example:
+### Changing diversity threshold
 
-- What happened when you changed the weight on genre from 2.0 to 0.5
-- What happened when you added tempo or valence to the score
-- How did your system behave for different types of users
+Lowering `DIVERSITY_THRESHOLD` from 0.5 to 0.2 caused the agent to converge in 1 iteration but often returned 3–4 songs from the same genre. Raising it to 0.8 on a 10-song catalog caused the agent to exhaust all 3 iterations for narrow profiles (e.g. jazz, which has only 1 song in the catalog).
+
+### Genre with only one song
+
+Profiles targeting `jazz` or `ambient` always hit a diversity ceiling: after the single matching song is placed, the refine step fills remaining slots from other genres — which is correct behavior, but the top score gap between slot 1 and slot 2 is large.
+
+### Acoustic vs non-acoustic
+
+Switching `likes_acoustic` flips the acousticness component's polarity. Lofi and ambient songs rise sharply for acoustic users; rock and synthwave drop. The change is immediate because the weight modulation happens in `plan()` before any iteration runs.
 
 ---
 
 ## Limitations and Risks
 
-Summarize some limitations of your recommender.
-
-Examples:
-
-- It only works on a tiny catalog
-- It does not understand lyrics or language
-- It might over favor one genre or mood
-
-You will go deeper on this in your model card.
+- **Tiny catalog:** 10 songs makes true diversity hard to achieve for any profile — in production this would need thousands of entries.
+- **Exact-match genre and mood:** A typo (`"Pop"` vs `"pop"`) scores zero on those factors. No fuzzy matching.
+- **Hand-tuned weights:** The 0.35/0.25/0.20/0.10/0.10 split was chosen manually, not learned from data.
+- **No collaborative filtering:** There is no user history or "people like you also liked" signal.
+- **Western pop-centric catalog:** The 10 songs skew toward Western genres; a global user would find fewer relevant results.
 
 ---
 
 ## Reflection
 
-Read and complete `model_card.md`:
-
-[**Model Card**](model_card.md)
-
-Write 1 to 2 paragraphs here about what you learned:
-
-- about how recommenders turn data into predictions
-- about where bias or unfairness could show up in systems like this
-
-
----
-
-## 7. `model_card_template.md`
-
-Combines reflection and model card framing from the Module 3 guidance. :contentReference[oaicite:2]{index=2}  
-
-```markdown
-# 🎧 Model Card - Music Recommender Simulation
-
-## 1. Model Name
-
-Give your recommender a name, for example:
-
-> VibeFinder 1.0
-
----
-
-## 2. Intended Use
-
-- What is this system trying to do
-- Who is it for
-
-Example:
-
-> This model suggests 3 to 5 songs from a small catalog based on a user's preferred genre, mood, and energy level. It is for classroom exploration only, not for real users.
-
----
-
-## 3. How It Works (Short Explanation)
-
-Describe your scoring logic in plain language.
-
-- What features of each song does it consider
-- What information about the user does it use
-- How does it turn those into a number
-
-Try to avoid code in this section, treat it like an explanation to a non programmer.
-
----
-
-## 4. Data
-
-Describe your dataset.
-
-- How many songs are in `data/songs.csv`
-- Did you add or remove any songs
-- What kinds of genres or moods are represented
-- Whose taste does this data mostly reflect
-
----
-
-## 5. Strengths
-
-Where does your recommender work well
-
-You can think about:
-- Situations where the top results "felt right"
-- Particular user profiles it served well
-- Simplicity or transparency benefits
-
----
-
-## 6. Limitations and Bias
-
-Where does your recommender struggle
-
-Some prompts:
-- Does it ignore some genres or moods
-- Does it treat all users as if they have the same taste shape
-- Is it biased toward high energy or one genre by default
-- How could this be unfair if used in a real product
-
----
-
-## 7. Evaluation
-
-How did you check your system
-
-Examples:
-- You tried multiple user profiles and wrote down whether the results matched your expectations
-- You compared your simulation to what a real app like Spotify or YouTube tends to recommend
-- You wrote tests for your scoring logic
-
-You do not need a numeric metric, but if you used one, explain what it measures.
-
----
-
-## 8. Future Work
-
-If you had more time, how would you improve this recommender
-
-Examples:
-
-- Add support for multiple users and "group vibe" recommendations
-- Balance diversity of songs instead of always picking the closest match
-- Use more features, like tempo ranges or lyric themes
-
----
-
-## 9. Personal Reflection
-
-A few sentences about what you learned:
-
-- What surprised you about how your system behaved
-- How did building this change how you think about real music recommenders
-- Where do you think human judgment still matters, even if the model seems "smart"
-
+See [model_card.md](model_card.md) for a full responsible-AI evaluation of VibeFinder.
