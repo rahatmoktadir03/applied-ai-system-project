@@ -13,3 +13,7 @@ venv/
 
 # Pytest cache
 .pytest_cache/
+
+# Logs (keep directory, ignore log files)
+logs/*.log
+logs/*.json

@@ -1,6 +1,9 @@
 from typing import List, Dict, Tuple, Optional
 from dataclasses import dataclass, asdict
 import pandas as pd
+from src.logger import get_logger, validate_user_prefs, validate_song_row
+
+logger = get_logger("recommender")
 
 
 @dataclass
@@ -69,12 +72,15 @@ def load_songs(csv_path: str) -> List[Dict]:
     Loads songs from a CSV file.
     Required by src/main.py
     """
-    print(f"Loading songs from {csv_path}...")
+    logger.info("Loading songs from %s", csv_path)
     df = pd.read_csv(csv_path)
     numeric_cols = ["energy", "tempo_bpm", "valence", "danceability", "acousticness"]
     for col in numeric_cols:
         df[col] = df[col].astype(float)
-    return df.to_dict(orient="records")
+    all_rows = df.to_dict(orient="records")
+    valid = [row for i, row in enumerate(all_rows) if validate_song_row(row, i)]
+    logger.info("Loaded %d / %d songs from %s", len(valid), len(all_rows), csv_path)
+    return valid
 
 
 def score_song(user_prefs: Dict, song: Dict) -> Tuple[float, List[str]]:
@@ -118,6 +124,9 @@ def recommend_songs(user_prefs: Dict, songs: List[Dict], k: int = 5) -> List[Tup
     Scores and ranks all songs against user preferences.
     Returns top-k as list of (song_dict, score, explanation).
     """
+    user_prefs = validate_user_prefs(user_prefs)
+    logger.info("Generating recommendations for genre=%s mood=%s energy=%.2f",
+                user_prefs.get("genre"), user_prefs.get("mood"), user_prefs.get("energy", 0.5))
     scored = []
     for song in songs:
         score, reasons = score_song(user_prefs, song)
