@@ -22,7 +22,7 @@ VibeFinder is different by design. Every recommendation is:
 - **Verified** by an agent that checks diversity and relevance before returning results
 - **Tested** against 5 user profiles with 3 measurable metrics
 
-It's a small system — 10 songs, one catalog — but it demonstrates the same architectural patterns (RAG, agentic loops, evaluation harnesses) that power production recommender systems at scale.
+It's a small system — 31 songs, one catalog — but it demonstrates the same architectural patterns (RAG, agentic loops, evaluation harnesses) that power production recommender systems at scale.
 
 ---
 
@@ -316,7 +316,7 @@ VibeFinder has real limitations that matter for responsible use:
 
 ### Could VibeFinder Be Misused?
 
-At its current scale (10 songs, classroom use), direct misuse is unlikely. But the same patterns exist at production scale:
+At its current scale (31 songs, classroom use), direct misuse is unlikely. But the same patterns exist at production scale:
 
 | Risk | How It Works | Prevention in VibeFinder |
 |------|-------------|--------------------------|
