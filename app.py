@@ -72,5 +72,13 @@ if run_btn:
         st.write("**Iteration log:**")
         for line in agent.state.history:
             st.text(line)
+
+    with st.expander("🔍 Reasoning Trace (Observable Tool-Call Chain)"):
+        st.caption("Every intermediate decision the agent made, in order.")
+        for i, step in enumerate(agent.state.reasoning_trace, 1):
+            st.markdown(f"**Step {i} — `{step.tool}`** _{step.timestamp}_")
+            st.write(f"↳ **Reasoning:** {step.reasoning}")
+            st.write(f"↳ **Decision:** {step.decision}")
+            st.divider()
 else:
     st.info("Set your taste profile in the sidebar and click **Find My Songs**.")
