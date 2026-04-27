@@ -1,0 +1,58 @@
+{
+  "pop": {
+    "description": "Pop music is defined by broad mainstream appeal, polished production, and catchy hooks. It prioritizes accessibility over complexity, with song structures built around memorable choruses.",
+    "typical_energy": "medium-high (0.6–0.9)",
+    "typical_moods": ["happy", "energetic", "upbeat"],
+    "listen_when": "commuting, social gatherings, working out, background music",
+    "related_genres": ["indie pop", "synthwave"],
+    "keywords": ["catchy", "polished", "danceable", "radio-friendly", "upbeat"]
+  },
+  "lofi": {
+    "description": "Lo-fi hip hop blends mellow beats with ambient textures and slight audio imperfections — vinyl crackle, tape hiss. It's engineered for sustained focus and calm.",
+    "typical_energy": "low (0.2–0.5)",
+    "typical_moods": ["chill", "focused", "relaxed"],
+    "listen_when": "studying, coding, late-night reading, creative work",
+    "related_genres": ["ambient", "jazz"],
+    "keywords": ["mellow", "cozy", "lo-fi", "beats", "focused", "chill"]
+  },
+  "rock": {
+    "description": "Rock music centers on electric guitars, a strong backbeat, and high energy. It ranges from stadium anthems to introspective ballads, but is defined by its drive and intensity.",
+    "typical_energy": "high (0.7–1.0)",
+    "typical_moods": ["intense", "energetic", "powerful"],
+    "listen_when": "working out, driving, high-intensity tasks, emotional release",
+    "related_genres": ["synthwave", "pop"],
+    "keywords": ["electric", "guitar", "drums", "intense", "powerful", "driving"]
+  },
+  "ambient": {
+    "description": "Ambient music prioritizes texture and atmosphere over melody or rhythm. It creates immersive sonic environments designed to complement rather than demand attention.",
+    "typical_energy": "very low (0.1–0.4)",
+    "typical_moods": ["chill", "relaxed", "meditative"],
+    "listen_when": "meditation, sleep, deep focus, background atmosphere",
+    "related_genres": ["lofi", "jazz"],
+    "keywords": ["atmospheric", "texture", "immersive", "spacious", "meditative"]
+  },
+  "jazz": {
+    "description": "Jazz is built on improvisation, syncopated rhythms, and complex harmonic structures. It rewards careful listening and rewards attention with layers of musical conversation.",
+    "typical_energy": "low-medium (0.3–0.6)",
+    "typical_moods": ["relaxed", "focused", "moody"],
+    "listen_when": "reading, dinner, unwinding, background in cafes",
+    "related_genres": ["lofi", "ambient"],
+    "keywords": ["improvisation", "complex", "soulful", "sophisticated", "acoustic"]
+  },
+  "synthwave": {
+    "description": "Synthwave draws on 1980s electronic aesthetics — pulsing synthesizers, driving basslines, and cinematic atmosphere. It balances energy with a sense of nostalgic cool.",
+    "typical_energy": "medium-high (0.6–0.85)",
+    "typical_moods": ["moody", "focused", "nostalgic"],
+    "listen_when": "night driving, coding, creative work, late-night sessions",
+    "related_genres": ["pop", "rock"],
+    "keywords": ["synth", "retro", "electronic", "cinematic", "neon", "nostalgic"]
+  },
+  "indie pop": {
+    "description": "Indie pop combines the melodic hooks of pop with a more personal, lo-fi, or experimental sensibility. It trades polish for authenticity and broad themes for specific emotional detail.",
+    "typical_energy": "medium (0.5–0.8)",
+    "typical_moods": ["happy", "relaxed", "nostalgic"],
+    "listen_when": "commuting, casual listening, afternoon walks, creative work",
+    "related_genres": ["pop", "lofi"],
+    "keywords": ["melodic", "authentic", "personal", "dreamy", "indie", "heartfelt"]
+  }
+}
