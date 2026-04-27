@@ -1,0 +1,51 @@
+id,title,artist,genre,mood,energy,tempo_bpm,valence,danceability,acousticness
+1,Sunrise City,Neon Echo,pop,happy,0.82,118.0,0.84,0.79,0.18
+2,Midnight Coding,LoRoom,lofi,chill,0.42,78.0,0.56,0.62,0.71
+3,Storm Runner,Voltline,rock,intense,0.91,152.0,0.48,0.66,0.1
+4,Library Rain,Paper Lanterns,lofi,chill,0.35,72.0,0.6,0.58,0.86
+5,Gym Hero,Max Pulse,pop,intense,0.93,132.0,0.77,0.88,0.05
+6,Spacewalk Thoughts,Orbit Bloom,ambient,chill,0.28,60.0,0.65,0.41,0.92
+7,Coffee Shop Stories,Slow Stereo,jazz,relaxed,0.37,90.0,0.71,0.54,0.89
+8,Night Drive Loop,Neon Echo,synthwave,moody,0.75,110.0,0.49,0.73,0.22
+9,Focus Flow,LoRoom,lofi,focused,0.4,80.0,0.59,0.6,0.78
+10,Rooftop Lights,Indigo Parade,indie pop,happy,0.76,124.0,0.81,0.82,0.35
+11,Summer Coast,Bright Project,pop,happy,0.86,125.0,0.852,0.697,0.173
+12,Golden Road,Deep Band,pop,happy,0.786,115.4,0.973,0.76,0.093
+13,Faded Lights,Bright Band,pop,happy,0.87,126.9,0.886,0.873,0.134
+14,Quiet Days,Wild Pulse,pop,happy,0.886,116.8,0.821,0.694,0.185
+15,Late Room,Nova Pulse,lofi,chill,0.459,79.5,0.552,0.588,0.74
+16,Coast Drift,Stellar Band,lofi,chill,0.469,80.9,0.609,0.621,0.712
+17,Waves Drift,Dark Project,lofi,chill,0.428,66.5,0.526,0.641,0.64
+18,Late Waves,Stellar Echo,lofi,chill,0.517,86.3,0.527,0.596,0.725
+19,Quiet Thunder,City Band,rock,intense,0.865,147.8,0.535,0.661,0.128
+20,Burning Room,Dark Project,rock,intense,0.823,160.5,0.414,0.663,0.108
+21,Cool Thunder,Dark Project,rock,intense,0.983,149.8,0.416,0.638,0.106
+22,Room Surge,Nova Pulse,rock,intense,1.0,156.2,0.546,0.842,0.144
+23,Light Study,Ocean Sound,lofi,chill,0.334,77.7,0.63,0.508,0.872
+24,Late Coast,Wild Bloom,lofi,chill,0.287,72.1,0.648,0.485,0.876
+25,Light Study,Wild Bloom,lofi,chill,0.362,68.7,0.562,0.532,0.801
+26,Quiet City,Deep Band,lofi,chill,0.35,79.3,0.628,0.455,0.957
+27,Cool Lights,Wild Project,pop,intense,0.973,113.3,0.729,0.858,0.052
+28,Cool Days,Ocean Band,pop,intense,0.876,123.3,0.776,0.989,0.021
+29,Golden Hour,City Wave,pop,intense,0.894,131.8,0.705,0.967,0.038
+30,Summer City,Bright Wave,pop,intense,0.957,138.6,0.788,0.928,0.059
+31,Drifting Coast,Ocean Band,ambient,chill,0.331,57.3,0.51,0.466,0.974
+32,Drifting City,Deep Echo,ambient,chill,0.307,69.7,0.647,0.381,0.911
+33,Drifting Sky,Dark Wave,ambient,chill,0.236,64.2,0.644,0.343,0.873
+34,Road Haze,Bright Band,ambient,chill,0.32,68.9,0.576,0.437,0.901
+35,Cool Blues,Bright Pulse,jazz,relaxed,0.39,94.5,0.675,0.432,0.85
+36,Deep Blues,Ocean Project,jazz,relaxed,0.369,80.6,0.768,0.589,0.894
+37,Slow Room,Stellar Wave,jazz,relaxed,0.38,75.9,0.793,0.636,0.946
+38,Slow Coast,Nova Band,jazz,relaxed,0.403,91.4,0.755,0.532,0.915
+39,Road Protocol,Wild Echo,synthwave,moody,0.68,92.8,0.553,0.749,0.168
+40,Retro City,Stellar Pulse,synthwave,moody,0.794,114.6,0.512,0.664,0.111
+41,Retro City,Bright Band,synthwave,moody,0.678,107.0,0.468,0.777,0.271
+42,Waves Protocol,Stellar Wave,synthwave,moody,0.804,115.9,0.452,0.755,0.264
+43,Quiet Sky,Deep Band,lofi,focused,0.44,77.8,0.594,0.512,0.749
+44,Warm Study,Dark Sound,lofi,focused,0.354,82.8,0.539,0.57,0.783
+45,Quiet Rain,Ocean Collective,lofi,focused,0.486,78.9,0.572,0.613,0.86
+46,Cool Study,Nova Bloom,lofi,focused,0.484,83.0,0.58,0.637,0.801
+47,Soft Sky,Dark Bloom,indie pop,happy,0.775,112.3,0.855,0.853,0.277
+48,City Garden,Nova Pulse,indie pop,happy,0.766,121.3,0.818,0.701,0.459
+49,Warm Afternoon,Dark Pulse,indie pop,happy,0.698,122.9,0.816,0.851,0.266
+50,Bright Afternoon,Wild Band,indie pop,happy,0.703,124.1,0.799,0.756,0.337
