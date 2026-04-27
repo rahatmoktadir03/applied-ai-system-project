@@ -1,0 +1,218 @@
+from dataclasses import dataclass, field
+from typing import List, Dict, Tuple
+from src.logger import get_logger, validate_user_prefs
+from src.retrieval import retrieve_similar_songs, generate_explanation
+
+logger = get_logger("agent")
+
+_DEFAULT_WEIGHTS = {
+    "genre": 0.35,
+    "mood": 0.25,
+    "energy": 0.20,
+    "acousticness": 0.10,
+    "valence": 0.10,
+}
+
+_HIGH_ENERGY_GENRES = {"rock", "synthwave", "pop"}
+
+
+@dataclass
+class AgentState:
+    iteration: int = 0
+    weights: Dict[str, float] = field(default_factory=lambda: dict(_DEFAULT_WEIGHTS))
+    last_diversity: float = 0.0
+    last_relevance: float = 0.0
+    converged: bool = False
+    history: List[str] = field(default_factory=list)
+
+
+class Agent:
+    MAX_ITERATIONS = 3
+    DIVERSITY_THRESHOLD = 0.5
+    RELEVANCE_THRESHOLD = 0.6
+
+    def __init__(self, songs: List[Dict]):
+        self.songs = songs
+        self.state = AgentState()
+
+    def plan(self, user_prefs: Dict) -> Dict[str, float]:
+        """Analyze user preferences and set initial feature weights."""
+        weights = dict(_DEFAULT_WEIGHTS)
+
+        if user_prefs.get("likes_acoustic", False):
+            weights["acousticness"] += 0.05
+            weights["energy"] -= 0.05
+
+        if user_prefs.get("genre", "") in _HIGH_ENERGY_GENRES:
+            weights["energy"] += 0.05
+            weights["valence"] -= 0.05
+
+        weights = _normalize(weights)
+        self.state.weights = weights
+        logger.info("Plan: weights=%s", {k: f"{v:.3f}" for k, v in weights.items()})
+        return weights
+
+    def act(self, user_prefs: Dict, k: int = 5) -> List[Tuple[Dict, float]]:
+        """Score and rank all songs using the current weights."""
+        weights = self.state.weights
+        likes_acoustic = user_prefs.get("likes_acoustic", False)
+        user_energy = float(user_prefs.get("energy", 0.5))
+
+        scored = []
+        for song in self.songs:
+            genre_match = 1.0 if song.get("genre") == user_prefs.get("genre") else 0.0
+            mood_match = 1.0 if song.get("mood") == user_prefs.get("mood") else 0.0
+            energy_sim = 1.0 - abs(float(song.get("energy", 0.5)) - user_energy)
+            acoustic = (
+                float(song.get("acousticness", 0.5))
+                if likes_acoustic
+                else 1.0 - float(song.get("acousticness", 0.5))
+            )
+            valence = float(song.get("valence", 0.5))
+
+            score = (
+                weights["genre"] * genre_match
+                + weights["mood"] * mood_match
+                + weights["energy"] * energy_sim
+                + weights["acousticness"] * acoustic
+                + weights["valence"] * valence
+            )
+            scored.append((song, round(score, 4)))
+
+        scored.sort(key=lambda x: x[1], reverse=True)
+        logger.info(
+            "Act iter=%d: top score=%.3f song='%s'",
+            self.state.iteration,
+            scored[0][1] if scored else 0,
+            scored[0][0].get("title", "?") if scored else "?",
+        )
+        return scored[:k]
+
+    def evaluate(self, results: List[Tuple[Dict, float]], k: int) -> Tuple[float, float]:
+        """Compute diversity (unique genres / k) and relevance (mean score)."""
+        top = results[:k]
+        genres = {song.get("genre", "") for song, _ in top}
+        diversity = len(genres) / k if top else 0.0
+
+        scores = [score for _, score in top]
+        relevance = sum(scores) / len(scores) if scores else 0.0
+
+        self.state.last_diversity = round(diversity, 4)
+        self.state.last_relevance = round(relevance, 4)
+
+        logger.info(
+            "Evaluate iter=%d: diversity=%.2f relevance=%.2f",
+            self.state.iteration,
+            diversity,
+            relevance,
+        )
+        return diversity, relevance
+
+    def refine(
+        self, results: List[Tuple[Dict, float]], k: int
+    ) -> List[Tuple[Dict, float]]:
+        """Re-rank to boost genre diversity using a greedy one-per-genre approach."""
+        if not results:
+            return results
+
+        old_div = self.state.last_diversity
+
+        refined = [results[0]]
+        seen_genres = {results[0][0].get("genre", "")}
+        remaining = results[1:]
+
+        # One representative per unseen genre first
+        for song, score in remaining:
+            genre = song.get("genre", "")
+            if genre not in seen_genres:
+                refined.append((song, score))
+                seen_genres.add(genre)
+            if len(refined) >= k:
+                break
+
+        # Fill any leftover slots by score
+        for song, score in remaining:
+            if (song, score) not in refined:
+                refined.append((song, score))
+            if len(refined) >= k:
+                break
+
+        new_genres = {s.get("genre", "") for s, _ in refined[:k]}
+        new_div = len(new_genres) / k
+        self.state.last_diversity = round(new_div, 4)
+        logger.info("Refine: diversity %.2f → %.2f", old_div, new_div)
+        return refined[:k]
+
+    def _adjust_weights(self, diversity: float, relevance: float) -> None:
+        """Nudge weights to address low diversity or low relevance."""
+        weights = dict(self.state.weights)
+        delta = 0.05
+
+        if diversity < self.DIVERSITY_THRESHOLD:
+            weights["genre"] = max(0.05, weights["genre"] - delta)
+            weights["energy"] = min(0.60, weights["energy"] + delta)
+        if relevance < self.RELEVANCE_THRESHOLD:
+            weights["energy"] = min(0.60, weights["energy"] + delta)
+            weights["genre"] = max(0.05, weights["genre"] - delta)
+
+        self.state.weights = _normalize(weights)
+        logger.debug("Adjust weights: %s", {k: f"{v:.3f}" for k, v in self.state.weights.items()})
+
+    def recommend(self, user_prefs: Dict, k: int = 5) -> List[Tuple[Dict, float, str]]:
+        """
+        Full agentic loop: plan → [act → evaluate → refine → adjust] × MAX_ITERATIONS.
+        Returns top-k as (song_dict, score, rag_explanation).
+        """
+        user_prefs = validate_user_prefs(user_prefs)
+        self.state = AgentState()
+
+        self.plan(user_prefs)
+
+        results = []
+        for i in range(self.MAX_ITERATIONS):
+            self.state.iteration = i + 1
+
+            # Act with extra headroom for the refine step
+            results = self.act(user_prefs, k=max(k * 2, len(self.songs)))
+            diversity, relevance = self.evaluate(results, k)
+
+            self.state.history.append(
+                f"iter={i + 1} diversity={diversity:.2f} relevance={relevance:.2f}"
+            )
+
+            if diversity < self.DIVERSITY_THRESHOLD:
+                results = self.refine(results, k)
+                diversity, _ = self.evaluate(results, k)
+
+            if diversity >= self.DIVERSITY_THRESHOLD and relevance >= self.RELEVANCE_THRESHOLD:
+                self.state.converged = True
+                logger.info("Agent converged at iteration %d", i + 1)
+                break
+
+            if not self.state.converged:
+                self._adjust_weights(diversity, relevance)
+
+        final = results[:k]
+
+        # Attach RAG explanations
+        retrieved = retrieve_similar_songs(user_prefs, self.songs, k=len(self.songs))
+        id_to_retrieval = {r[0].get("id"): (r[1], r[2]) for r in retrieved}
+
+        output = []
+        for song, score in final:
+            sim, matched = id_to_retrieval.get(song.get("id"), (score, []))
+            explanation = generate_explanation(user_prefs, song, matched, sim)
+            output.append((song, score, explanation))
+
+        logger.info(
+            "Agent done: %d results, converged=%s, iterations=%d",
+            len(output),
+            self.state.converged,
+            self.state.iteration,
+        )
+        return output
+
+
+def _normalize(weights: Dict[str, float]) -> Dict[str, float]:
+    total = sum(weights.values())
+    return {k: round(v / total, 6) for k, v in weights.items()}
