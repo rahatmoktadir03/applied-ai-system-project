@@ -223,3 +223,92 @@ Diversity reached 1.00 — all 3 results are different genres (lofi, ambient, ja
 ```
 
 With only one rock song in the catalog, slots 2 and 3 fall back to high-energy pop — the next closest match by audio feature vector. The RAG explanation is honest: it cites energy and tempo proximity rather than pretending these are rock songs.
+
+---
+
+## Design Decisions
+
+### Why cosine similarity for retrieval instead of a simple sort?
+
+The weighted scorer in `recommender.py` is great for ranking but opaque about *which features* drove the result. Cosine similarity over the raw feature vector gives a complementary view: it measures geometric closeness in audio space without genre/mood binary bonuses. The two systems run in parallel — the agent uses the weighted scorer for ranking, and the RAG layer uses cosine similarity to identify *which features to cite* in the explanation. This separation keeps explanations grounded in measurable evidence rather than inferred from a score.
+
+### Why build an agentic loop instead of just sorting once?
+
+A single sort is fast but greedy — it will happily return four songs from the same genre if they all score well. Real recommendation lists need variety. The agent's evaluate→refine loop enforces a diversity threshold so the final list feels curated rather than repetitive. The loop also gives the system a natural place to self-correct: if diversity is too low, it nudges genre weight down and energy weight up, shifting toward audio similarity rather than exact-match filtering.
+
+### Why no external LLM API?
+
+Three reasons: **reproducibility** (the system works identically for anyone who clones it, no API keys needed), **transparency** (every explanation is template-generated from real feature values, so there's no hallucination risk), and **speed** (no network round trips). The trade-off is that explanations follow a fixed sentence structure — a real LLM would produce more natural language, but it would also be harder to verify and more expensive to run.
+
+### Why pandas for CSV loading instead of the stdlib csv module?
+
+Pandas gives free type coercion, missing-value detection, and `.to_dict()` conversion in three lines. The csv module would require manual float parsing and custom row validation. Since `validate_song_row` in `logger.py` already serves as the correctness guardrail, pandas here is a pure convenience layer — not a structural dependency.
+
+---
+
+## Testing Summary
+
+### What was tested
+
+| Test | What it checks | Result |
+|------|---------------|--------|
+| `test_recommend_returns_songs_sorted_by_score` | The pop/happy song ranks above the lofi/chill song for a pop/happy user | ✅ Pass |
+| `test_explain_recommendation_returns_non_empty_string` | `explain_recommendation()` returns a non-empty, non-whitespace string | ✅ Pass |
+| `test_evaluation_suite_runs` | `EvaluationSuite.run_all()` completes and returns a valid structured report | ✅ Pass |
+
+### What worked well
+
+- **Consistency is 1.0 across all 5 evaluation profiles.** Because the system is fully deterministic (no randomness, no sampling), running the same profile twice always returns the same top result. This is a deliberate design choice — it makes the system predictable and auditable.
+- **Diversity enforcement works.** Before the refine step was added, a pop user would receive 4 pop songs and 1 indie pop song. After adding the agent's refine step, results consistently spread across 3–4 distinct genres.
+- **Input guardrails catch real mistakes.** `validate_user_prefs` correctly clamps out-of-range energy values and warns on unknown genres without crashing — tested manually with `energy=1.5` and `genre="EDM"`.
+
+### What didn't work as expected
+
+- **Jazz and ambient profiles inflate the diversity metric.** With only one jazz and one ambient song in the catalog, those profiles reach diversity 1.00 not because the results are meaningfully diverse, but because there's nothing similar left to recommend. The metric is technically correct but misleading at this catalog size.
+- **The relevance threshold is hard to reach for underrepresented genres.** The Jazz Afternoon Relaxer profile consistently scores ~0.45 mean relevance — below the 0.6 threshold — because 4 of the 5 recommendations are genre and mood mismatches. The agent runs all 3 iterations and exits by exhaustion, not convergence.
+- **Energy proximity doesn't distinguish "calm" from "low energy."** A user who wants relaxed music at energy 0.3 is shown ambient and lofi songs interchangeably, even though they have different moods. A "tempo preference" input field would help decouple these.
+
+### What I learned
+
+The hardest part of evaluation was defining metrics that actually mean what you think they mean. Diversity of 1.00 sounds perfect but can be a symptom of a nearly empty catalog. Consistency of 1.00 sounds reliable but is just determinism with no randomness to be consistent *against*. Good evaluation requires understanding *why* a metric is high or low — not just whether it passes a threshold.
+
+---
+
+## Reflection
+
+Building VibeFinder taught me that recommender systems are fundamentally a *representation problem* more than a math problem. The hardest decisions weren't about which algorithm to use — they were about what to encode: what does "energy" mean as a number? What does it mean for two songs to be "similar"? The moment you reduce music to five floats, you've already made irreversible choices about what matters.
+
+The agentic loop was the most surprising part to build. I expected it to feel artificial — a loop added just to check a box on the requirements list. Instead, it genuinely improved results: without the diversity enforcement step, the system confidently returned four nearly identical songs. The loop is doing real work. That changed how I think about agentic AI: the value isn't in the agent being "smart," it's in the agent having a feedback signal it can actually act on.
+
+The biggest open question this project left me with: how do you evaluate a recommender when there's no ground truth? I used diversity and relevance as proxies — but a user might *want* five songs from the same genre. The "right" answer depends on who's asking, and no metric fully captures that. That gap between measurable and meaningful is something every real AI system has to grapple with, and building this gave me a concrete example I can reason about.
+
+---
+
+## Project Structure
+
+```
+applied-ai-system-project/
+├── src/
+│   ├── __init__.py
+│   ├── recommender.py   Core scoring: load_songs, score_song, Recommender class
+│   ├── logger.py        Validation, guardrails, dual-handler logging
+│   ├── retrieval.py     Cosine similarity retrieval + RAG explanation generation
+│   ├── agent.py         Agentic plan→act→evaluate→refine loop
+│   └── evaluation.py    5-profile reliability harness, JSON report output
+├── tests/
+│   └── test_recommender.py   3 automated tests
+├── assets/
+│   └── architecture.md       System diagrams (Mermaid, renders on GitHub)
+├── data/
+│   └── songs.csv             10-song catalog with audio features
+├── logs/                     Auto-created: recommender.log + eval reports
+├── app.py                    Streamlit UI
+├── model_card.md             Responsible AI evaluation (bias, limitations, reflection)
+└── requirements.txt          pandas · pytest · streamlit
+```
+
+---
+
+## License
+
+For educational use. See [model_card.md](model_card.md) for responsible AI documentation.
