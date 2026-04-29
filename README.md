@@ -2,6 +2,8 @@
 
 > A local AI-powered music recommender that demonstrates RAG, agentic workflows, and reliability testing — built entirely in Python with no external API required.
 
+📹 **[Video Walkthrough (Loom)](https://www.loom.com/share/42bd0b942ab54a169ba6592db76e2da2)** — end-to-end demo showing recommendations, agent diagnostics, reasoning trace, and evaluation harness.
+
 ---
 
 ## Project Origin
@@ -359,22 +361,35 @@ See [model_card.md](model_card.md) for the full responsible AI evaluation includ
 applied-ai-system-project/
 ├── src/
 │   ├── __init__.py
-│   ├── recommender.py   Core scoring: load_songs, score_song, Recommender class
+│   ├── recommender.py   Core scoring: load_songs, score_song, confidence_score
 │   ├── logger.py        Validation, guardrails, dual-handler logging
-│   ├── retrieval.py     Cosine similarity retrieval + RAG explanation generation
-│   ├── agent.py         Agentic plan→act→evaluate→refine loop
+│   ├── retrieval.py     Cosine similarity RAG + multi-source genre knowledge base
+│   ├── agent.py         Agentic plan→act→evaluate→refine loop + reasoning trace
 │   └── evaluation.py    5-profile reliability harness, JSON report output
 ├── tests/
-│   └── test_recommender.py   3 automated tests
+│   └── test_recommender.py   11 automated tests
 ├── assets/
 │   └── architecture.md       System diagrams (Mermaid, renders on GitHub)
 ├── data/
-│   └── songs.csv             10-song catalog with audio features
+│   ├── songs.csv             31-song catalog (real artists + audio features)
+│   ├── songs_extended.csv    155-song catalog (31 originals + 124 synthetic variants)
+│   └── genre_profiles.json   Genre knowledge base for multi-source RAG
+├── scripts/
+│   ├── run_evaluation.py           CLI test harness with PASS/FAIL report
+│   └── generate_synthetic_catalog.py  Synthetic data generator
 ├── logs/                     Auto-created: recommender.log + eval reports
-├── app.py                    Streamlit UI
+├── app.py                    Streamlit UI with catalog browser and feedback loop
 ├── model_card.md             Responsible AI evaluation (bias, limitations, reflection)
 └── requirements.txt          pandas · pytest · streamlit
 ```
+
+---
+
+## Portfolio Reflection
+
+*What this project says about me as an AI engineer:*
+
+Building VibeFinder taught me that the most important skill in applied AI isn't knowing which model to call — it's knowing how to design a system that can check its own work. Every meaningful piece of this project came down to that: the agentic loop re-evaluates its results before returning them, the evaluation harness measures across five different user types instead of assuming one profile represents everyone, and the RAG layer grounds every explanation in evidence rather than generating text in a vacuum. I gravitate toward building AI systems that are transparent and testable by design, not as an afterthought. This project is a concrete demonstration of that instinct.
 
 ---
 
